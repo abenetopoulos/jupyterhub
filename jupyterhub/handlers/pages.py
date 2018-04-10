@@ -257,6 +257,24 @@ class ProxyErrorHandler(BaseHandler):
 
         self.write(html)
 
+class GradingHandler(BaseHandler):
+    @gen.coroutine
+    def post(self):
+        self.log.info("IN THE APPROPRIATE HANDLER")
+        arguments = {}
+        for key, byte_list in self.request.body_arguments.items():
+            arguments[key] = ''.join([ bs.decode('utf8') for bs in byte_list ])
+        
+        self.log.info(arguments)
+
+        next_url = self.get_argument('next', '')
+        if next_url and not next_url.startswith('/'):
+            self.log.warning("Disallowing redirect outside JupyterHub: %r", next_url)
+        elif next_url:
+            url = next_url
+
+        self.log.info("Will redirect to {}".format(url))
+        self.redirect(url)
 
 default_handlers = [
     (r'/?', RootHandler),
@@ -265,4 +283,5 @@ default_handlers = [
     (r'/spawn', SpawnHandler),
     (r'/token', TokenPageHandler),
     (r'/error/(\d+)', ProxyErrorHandler),
+    (r'/grade', GradingHandler),
 ]
