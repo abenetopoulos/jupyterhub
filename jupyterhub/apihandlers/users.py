@@ -154,6 +154,15 @@ class UserAPIHandler(APIHandler):
                 raise web.HTTPError(400, "%s's server is in the process of stopping, please wait." % name)
         
         yield gen.maybe_future(self.authenticator.delete_user(user))
+
+        #delete associated pvc if running inside kubernetes
+        delete_volume_claim = getattr(user.spawner, 'delete_volume_claim', None)
+        if callable(delete_volume_claim):
+            self.log.info('Will try to delete volume claim')
+            yield gen.maybe_future(user.spawner.delete_volume_claim())
+        else:
+            self.log.info('User\'s ' + name + ' spawner does not support PVC deletion')
+
         # remove from registry
         del self.users[user]
 
